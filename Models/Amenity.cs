@@ -9,5 +9,5 @@ public partial class Amenity
 
     public string AmenityName { get; set; } = null!;
 
-    public virtual ICollection<HotelAmenity> HotelAmenities { get; set; } = new List<HotelAmenity>();
+    public virtual ICollection<Hotel> Hotels { get; set; } = new List<Hotel>();
 }

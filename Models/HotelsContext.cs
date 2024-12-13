@@ -23,11 +23,7 @@ public partial class HotelsContext : DbContext
 
     public virtual DbSet<Hotel> Hotels { get; set; }
 
-    public virtual DbSet<HotelAmenity> HotelAmenities { get; set; }
-
     public virtual DbSet<Review> Reviews { get; set; }
-
-    public virtual DbSet<Room> Rooms { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -47,6 +43,25 @@ public partial class HotelsContext : DbContext
                 .HasDefaultValueSql("(newid())")
                 .HasColumnName("AmenityID");
             entity.Property(e => e.AmenityName).HasMaxLength(20);
+
+            entity.HasMany(d => d.Hotels).WithMany(p => p.Amenities)
+                .UsingEntity<Dictionary<string, object>>(
+                    "HotelAmenity",
+                    r => r.HasOne<Hotel>().WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_Hotel Amenity_Hotel"),
+                    l => l.HasOne<Amenity>().WithMany()
+                        .HasForeignKey("AmenityId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_Amenity_Room_Amenity"),
+                    j =>
+                    {
+                        j.HasKey("AmenityId", "HotelId");
+                        j.ToTable("Hotel Amenity");
+                        j.IndexerProperty<Guid>("AmenityId").HasColumnName("AmenityID");
+                        j.IndexerProperty<Guid>("HotelId").HasColumnName("HotelID");
+                    });
         });
 
         modelBuilder.Entity<City>(entity =>
@@ -108,31 +123,6 @@ public partial class HotelsContext : DbContext
                     });
         });
 
-        modelBuilder.Entity<HotelAmenity>(entity =>
-        {
-            entity.HasKey(e => new { e.RoomId, e.AmenityId }).HasName("PK_Amenity_Room_1");
-
-            entity.ToTable("Hotel Amenity");
-
-            entity.Property(e => e.RoomId).HasColumnName("RoomID");
-            entity.Property(e => e.AmenityId).HasColumnName("AmenityID");
-
-            entity.HasOne(d => d.Amenity).WithMany(p => p.HotelAmenities)
-                .HasForeignKey(d => d.AmenityId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Amenity_Room_Amenity");
-
-            entity.HasOne(d => d.Room).WithMany(p => p.HotelAmenities)
-                .HasForeignKey(d => d.RoomId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Hotel Amenity_Hotel");
-
-            entity.HasOne(d => d.RoomNavigation).WithMany(p => p.HotelAmenities)
-                .HasForeignKey(d => d.RoomId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Amenity_Room_Room");
-        });
-
         modelBuilder.Entity<Review>(entity =>
         {
             entity.ToTable("Review");
@@ -153,22 +143,6 @@ public partial class HotelsContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Review_User");
-        });
-
-        modelBuilder.Entity<Room>(entity =>
-        {
-            entity.ToTable("Room");
-
-            entity.Property(e => e.RoomId)
-                .HasDefaultValueSql("(newid())")
-                .HasColumnName("RoomID");
-            entity.Property(e => e.HotelId).HasColumnName("HotelID");
-            entity.Property(e => e.RoomType).HasMaxLength(50);
-
-            entity.HasOne(d => d.Hotel).WithMany(p => p.Rooms)
-                .HasForeignKey(d => d.HotelId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Room_Hotel");
         });
 
         modelBuilder.Entity<User>(entity =>

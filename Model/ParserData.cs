@@ -8,13 +8,10 @@
         public int? HotelReviewCount { get; set; } = 0;
         public double?[] HotetRatingAdds { get; set; } = [null, null, null, null, null, null];
 
-        public List<string> Amenities {
-            get;
-            set;
-        } = [];
+        public List<string> Amenities { get; set; } = [];
         public List<string> Facilities { get; set; } = [];
 
-        public List<ReviewData> Reviews { get;} = [];
+        public List<ReviewData> Reviews { get; set; } = [];
 
 
         public void AddReview(string title, string userName, string city,
@@ -44,12 +41,12 @@
             { "декабрь", 12 }, { "дек.", 12 },
         };
 
-        string Title { get; set; } = string.Empty;
-        string UserName { get; set; } = string.Empty;
-        string City { get; set; } = string.Empty;
-        double? Rating { get; set; } = null;
-        DateOnly DatePost { get; set; } = DateOnly.MinValue;
-        DateOnly DateCheckIn { get; set; } = DateOnly.MinValue;
+        public string Title { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public double? Rating { get; set; } = null;
+        public DateOnly DatePost { get; set; } = DateOnly.MinValue;
+        public DateOnly DateCheckIn { get; set; } = DateOnly.MinValue;
 
         public ReviewData(string title, string userName, string city,
                           double? rating, string datePostMonth, int datePostDay,

@@ -27,11 +27,9 @@ public partial class Hotel
 
     public double? RatingSleepQuality { get; set; }
 
-    public virtual ICollection<HotelAmenity> HotelAmenities { get; set; } = new List<HotelAmenity>();
-
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
-    public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
+    public virtual ICollection<Amenity> Amenities { get; set; } = new List<Amenity>();
 
     public virtual ICollection<Facility> Facilities { get; set; } = new List<Facility>();
 }
