@@ -1,142 +1,102 @@
 ﻿using CourseWork.Commands;
 using CourseWork.Model;
-using CourseWork.Models;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Input;
 
 namespace CourseWork.ViewModel
 {
-    public class MainVM
+    public class MainVM : BasicVM
     {
-        public ObservableCollection<ParserData> Dates { get; set; } = [];
-        public ICommand StartParsingCommand { get; set; }
+        public ObservableCollection<ParserData> Datas { get; set; } = [];
 
+        public List<string> MatrixTypes { get; set; } = [];
+
+        public string ChartCount { get; set; } = "0";
+        public List<string> ChartTypes { get; set; } = [];
+
+        public ICommand StartParsingCommand { get; set; }
+        public ICommand UploadDataCommand { get; set; }
+        public ICommand DeletePhoneCommand { get; set; }
+        public ICommand DeleteCameraCommand { get; set; }
+        public ICommand DeleteEquipCommand { get; set; }
+        public ICommand UpdateDataCommand { get; set; }
+
+        public ParserData? Selected { get; set; }
 
         public MainVM()
         {
-            StartParsingCommand = new RelayCommand(async () => await GetLinksAsync());
+            StartParsingCommand = new RelayCommand(StartParser);
+            UploadDataCommand = new RelayCommand(UploadData);
+            UpdateDataCommand = new RelayCommand(UploadData);
+            DeletePhoneCommand = new RelayCommandT(DeletePhone);
+            DeleteCameraCommand = new RelayCommandT(DeleteCamera);
+            DeleteEquipCommand = new RelayCommandT(DeleteEquip);
+
+            foreach (var a in DataAnalyzer.Criteries.Keys)
+                ChartTypes.Add(a);
         }
 
-
-        private async Task GetLinksAsync()
+        private void StartParser()
         {
-            List<string> links = await Parser.GetLinksAsync("https://www.tripadvisor.ru/Hotels-g665310-Tomsk_Tomsk_Oblast_Siberian_District-Hotels.html");
-            Dates.Clear();
-
+            List<string> links = Parser.GetLinks("https://2droida.ru/catalog/smartfony", 200);
             foreach (string link in links)
             {
-                ParserData data = await Parser.ParseAsync(link);
-                Dates.Add(data);
+                ParserData data = Parser.Parse(link);
+                DatabaseManager.DataToBD(data);
+            }
+        }
 
-                await DataToBD(data);
+        private void UploadData()
+        {
+            Datas.Clear();
+            List<ParserData> data = DatabaseManager.GetData();
+            data.ForEach(d => Datas.Add(d));
+            DatabaseManager.GetMatrixType()?.ForEach(d => MatrixTypes.Add(d));
+        }
+
+        private void DeletePhone(object parameter)
+        {
+            if (parameter is ParserData Param)
+            {
+
+                DatabaseManager.DeletePhone(Selected!);
+                Datas.Remove(Selected!);
+            }
+        }
+
+        private void DeleteCamera(object parameter)
+        {
+            if (parameter is СameraData camera)
+            {
+                DatabaseManager.DeleteCamera(Selected!.PhoneID, camera);
+                СameraData? cameraData = Selected.Camers.FirstOrDefault(c => c.CameraType == camera.CameraType);
+                Selected.Camers.Remove(cameraData!);
+            }
+        }
+
+        private void DeleteEquip(object parameter)
+        {
+            if (parameter is string equipment)
+            {
+                DatabaseManager.DeleteEquipment(Selected!.PhoneID, equipment);
+                Selected.Equipment.Remove(equipment);
             }
         }
 
 
-        private static async Task DataToBD(ParserData data)
+        private void UpdateData()
         {
-            using (HotelsContext db = new())
-            {
-                //Создание отеля
-                Hotel hotel = new Hotel
-                {
-                    Name = data.HotelName,
-                    Adress = data.HotelAdress,
-                    Rating = data.HotelRating,
-                    ReviewCount = data.HotelReviewCount,
-                    RatingLocation = data.HotetRatingAdds.ElementAtOrDefault(0),
-                    RatingRooms = data.HotetRatingAdds.ElementAtOrDefault(1),
-                    RatingPriceQuality = data.HotetRatingAdds.ElementAtOrDefault(2),
-                    RatingPurity = data.HotetRatingAdds.ElementAtOrDefault(3),
-                    RatingService = data.HotetRatingAdds.ElementAtOrDefault(4),
-                    RatingSleepQuality = data.HotetRatingAdds.ElementAtOrDefault(5),
-                    Amenities = [],
-                    Facilities = [],
-                    Reviews = [],
-                };
-                db.Hotels.Add(hotel);
 
-                // Обработка удобств
-                foreach (var amenityName in data.Amenities)
-                {
-                    var amenity = db.Amenities.FirstOrDefault(a => a.AmenityName == amenityName)
-                                ?? new Amenity { AmenityName = amenityName, Hotels = new List<Hotel>() };
-
-                    if (!amenity.Hotels.Contains(hotel))
-                        amenity.Hotels.Add(hotel);
-
-                    hotel.Amenities.Add(amenity);
-
-                    if (amenity.AmenityId == Guid.Empty)
-                        db.Amenities.Add(amenity);
-                }
-
-                //Обработка вторых удобств
-                foreach (var facilityName in data.Facilities)
-                {
-                    var facility = db.Facilities.FirstOrDefault(f => f.FacilitiesName == facilityName)
-                                   ?? new Facility { FacilitiesName = facilityName, Hotels = [] };
-
-                    if (!facility.Hotels.Contains(hotel))
-                        facility.Hotels.Add(hotel);
-
-                    hotel.Facilities.Add(facility);
-
-                    if (facility.FacilitiesId == Guid.Empty)
-                        db.Facilities.Add(facility);
-                }
-
-                // Обработка отзывов
-                foreach (ReviewData reviewData in data.Reviews)
-                {
-                    //Город
-                    City city = db.Cities.FirstOrDefault(c => c.CityName == reviewData.City)
-                        ?? new City { CityName = reviewData.City, Users = [] };
-
-                    if (city.CityId == Guid.Empty)
-                        db.Cities.Add(city);
-
-                    //Пользователь
-                    User user = db.Users.FirstOrDefault(u => u.UserName == reviewData.UserName)
-                        ?? new User { UserName = reviewData.UserName, City = city, Reviews = new List<Review>() };
-
-                    if (user.UserId == Guid.Empty)
-                        db.Users.Add(user);
-
-                    if (!city.Users.Contains(user))
-                        city.Users.Add(user);
-
-                    //Отзыв
-                    Review NewReview = new Review
-                    {
-                        Title = reviewData.Title,
-                        User = user,
-                        Hotel = hotel,
-                        Rating = reviewData.Rating,
-                        DatePosted = reviewData.DatePost,
-                        DateCheckIn = reviewData.DateCheckIn
-                    };
-
-
-                    //Связь
-                    hotel.Reviews.Add(NewReview);
-                    user.Reviews.Add(NewReview);
-                    db.Reviews.Add(NewReview);
-
-                    db.Add(NewReview);
-                }
-
-                await db.SaveChangesAsync();
-            }
         }
     }
 
-    //public class BasicVM : INotifyPropertyChanged
-    //{
-    //    public event PropertyChangedEventHandler? PropertyChanged;
-    //    protected void OnPropertyChanged(string propertyName)
-    //    {
-    //        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    //    }
-    //}
+    public class BasicVM : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
 }

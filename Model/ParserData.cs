@@ -2,72 +2,35 @@
 {
     public class ParserData
     {
-        public string HotelName { get; set; } = string.Empty;
-        public string HotelAdress { get; set; } = string.Empty;
-        public double? HotelRating { get; set; } = null;
-        public int? HotelReviewCount { get; set; } = 0;
-        public double?[] HotetRatingAdds { get; set; } = [null, null, null, null, null, null];
+        public Guid PhoneID { get; set; } = Guid.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+        public double CurrentPrice { get; set; } = double.NaN;
+        public int? Dicsount { get; set; } = 0;
+        public double? OldPrice { get; set; } = double.NaN;
+        public string MatrixType { get; set; } = string.Empty;
+        public double Screen_Diagonal { get; set; } = double.NaN;
+        public int BatteryCapacity { get; set; } = 0;
+        public int REM {  get; set; } = 0;
 
-        public List<string> Amenities { get; set; } = [];
-        public List<string> Facilities { get; set; } = [];
-
-        public List<ReviewData> Reviews { get; set; } = [];
 
 
-        public void AddReview(string title, string userName, string city,
-                              double? rating, string datePostMonth, int datePostDay,
-                              string dateCheckInMonth, int dateCheckInDay)
+        public List<string> Equipment { get; set; } = [];
+        public List<string> Tags { get; set; } = [];
+        public List<СameraData> Camers { get; set; } = [];
+
+
+        public void AddCamera(string cameraType, string specification)
         {
-            ReviewData reviewData = new(title, userName, city, rating, datePostMonth, datePostDay, dateCheckInMonth, dateCheckInDay);
-            Reviews.Add(reviewData);
+            СameraData cameraData = new(cameraType, specification);
+            Camers.Add(cameraData);
         }
     }
 
-    public class ReviewData
+    public class СameraData(string cameraType, string specification)
     {
-        private readonly Dictionary<string, int> GetMonth = new()
-        {
-            { "январь", 1 }, { "янв.", 1 },
-            { "февраль", 2 }, { "февр.", 2 },
-            { "март", 3 },
-            { "апрель", 4 }, { "апр.", 4 },
-            { "май", 5 },
-            { "июнь", 6 },
-            { "июль", 7 },
-            { "август", 8 }, { "авг.", 8 },
-            { "сентябрь", 9 }, { "сент.", 9 },
-            { "октябрь", 10 }, { "окт.", 10 },
-            { "ноябрь", 11 }, { "нояб.", 11 },
-            { "декабрь", 12 }, { "дек.", 12 },
-        };
-
-        public string Title { get; set; } = string.Empty;
-        public string UserName { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-        public double? Rating { get; set; } = null;
-        public DateOnly DatePost { get; set; } = DateOnly.MinValue;
-        public DateOnly DateCheckIn { get; set; } = DateOnly.MinValue;
-
-        public ReviewData(string title, string userName, string city,
-                          double? rating, string datePostMonth, int datePostDay,
-                          string dateCheckInMonth, int dateCheckInDay)
-        {
-            Title = title;
-            UserName = userName;
-            Rating = rating;
-            City = city;
-            DatePost = GetData(datePostMonth, datePostDay);
-            DateCheckIn = GetData(dateCheckInMonth, dateCheckInDay);
-        }
-
-        private DateOnly GetData(string DateMonth, int DateYear)
-        {
-            int day = 1;
-            int month = GetMonth[DateMonth.Trim()];
-            int year = DateYear;
-            DateOnly dateOnly = new DateOnly(year, month, day);
-            
-            return dateOnly;
-        }
+        public string CameraType { get; set; } = cameraType;
+        public string Specification { get; set; } = specification;
     }
 }
